@@ -150,6 +150,11 @@
 
         async function handleCheckout() {
             const profile = await getCurrentUserProfile();
+            if (!profile) {
+                alert("Please log in or register your details to complete your order checkout.");
+                window.location.href = "login.html?redirect=cart.html";
+                return;
+            }
             checkoutViaWhatsApp(profile);
         }
 

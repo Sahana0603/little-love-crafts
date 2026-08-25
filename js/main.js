@@ -65,14 +65,14 @@ function injectHeader() {
                 <a href="${basePath}about.html" id="nav-about">About Us</a>
                 <a href="${basePath}reviews.html" id="nav-reviews">Reviews</a>
                 <a href="${basePath}contact.html" id="nav-contact">Contact</a>
-                <a href="${basePath}login.html" id="nav-login" class="auth-required-nav">Login / Register</a>
-                <a href="#" id="nav-logout" class="auth-required-nav" style="display:none;" onclick="signOutUser(); return false;">Logout</a>
             </nav>
 
-            <div class="nav-icons">
+            <div class="nav-icons" style="display:flex; align-items:center; gap:12px;">
                 <a href="${basePath}cart.html" class="cart-icon-btn" aria-label="Shopping Cart">
                     🛒 <span class="cart-count" id="cart-indicator">0</span>
                 </a>
+                <span id="nav-user-greeting" style="font-size:13px; font-weight:600; color:var(--text-muted); display:none;"></span>
+                <a href="#" id="nav-user-logout" style="font-size:13px; color:var(--accent-rose); font-weight:600; text-decoration:underline; display:none;" onclick="signOutUser(); return false;">Logout</a>
                 <button class="mobile-menu-toggle" id="menu-toggle" aria-label="Toggle Menu">☰</button>
             </div>
         </div>
@@ -218,36 +218,23 @@ async function updateNavSessionState() {
     if (isAdminPath) return; // Skip updating storefront session labels on admin pages
     
     const profile = await getCurrentUserProfile();
-    const loginLink = document.getElementById('nav-login');
-    const logoutLink = document.getElementById('nav-logout');
-    const footerAdminLink = document.getElementById('footer-admin-link');
+    const greeting = document.getElementById('nav-user-greeting');
+    const logoutBtn = document.getElementById('nav-user-logout');
     
-    const basePath = '';
-
     if (profile) {
-        if (loginLink) {
-            // Change text of login link to customer name or profile
-            loginLink.textContent = profile.name.split(' ')[0];
-            loginLink.href = '#';
-            loginLink.style.pointerEvents = 'none'; // Logged in, no need to navigate to login
+        if (greeting) {
+            greeting.textContent = `Hi, ${profile.name.split(' ')[0]} 💕`;
+            greeting.style.display = 'inline';
         }
-        if (logoutLink) {
-            logoutLink.style.display = 'inline-block';
-        }
-        if (footerAdminLink) {
-            footerAdminLink.style.display = 'none'; // Hide owner dashboard link
+        if (logoutBtn) {
+            logoutBtn.style.display = 'inline';
         }
     } else {
-        if (loginLink) {
-            loginLink.textContent = "Login / Register";
-            loginLink.href = `${basePath}login.html`;
-            loginLink.style.pointerEvents = 'auto';
+        if (greeting) {
+            greeting.style.display = 'none';
         }
-        if (logoutLink) {
-            logoutLink.style.display = 'none';
-        }
-        if (footerAdminLink) {
-            footerAdminLink.style.display = 'none'; // Hide owner dashboard link
+        if (logoutBtn) {
+            logoutBtn.style.display = 'none';
         }
     }
 }
@@ -391,32 +378,11 @@ async function enforcePageAuthentication() {
     // Handle customer login page bypass
     if (path.includes('login.html')) {
         if (profile) {
-            // Already logged in customer -> redirect to storefront index
-            window.location.href = 'index.html';
+            // Already logged in customer -> redirect to storefront index or desired redirection URL
+            const urlParams = new URLSearchParams(window.location.search);
+            const redirectUrl = urlParams.get('redirect') || 'index.html';
+            window.location.href = redirectUrl;
         }
         return;
-    }
-
-    // List of customer-facing pages that require authentication
-    const protectedPages = [
-        'index.html',
-        'shop.html',
-        'product-details.html',
-        'cart.html',
-        'reviews.html',
-        'about.html',
-        'contact.html'
-    ];
-
-    // Check if the current page is protected (or is the directory index root '/')
-    const isProtected = protectedPages.some(page => path.includes(page)) || path.endsWith('/');
-
-    if (isProtected) {
-        if (!profile) {
-            // Redirect to customer login.html
-            const isAdminPath = path.includes('/admin/') || path.endsWith('/admin') || path.includes('/admin/index.html');
-            const basePath = isAdminPath ? '../' : '';
-            window.location.href = `${basePath}login.html`;
-        }
     }
 }

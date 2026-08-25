@@ -171,7 +171,9 @@
                 successDiv.textContent = "Logged in successfully! Redirecting...";
                 successDiv.style.display = 'block';
                 setTimeout(() => {
-                    window.location.href = 'index.html';
+                    const urlParams = new URLSearchParams(window.location.search);
+                    const redirectUrl = urlParams.get('redirect') || 'index.html';
+                    window.location.href = redirectUrl;
                 }, 1000);
             }
         }
@@ -209,7 +211,9 @@
             if (!loginResult.error) {
                 localStorage.removeItem('llc_user_profile');
                 setTimeout(() => {
-                    window.location.href = 'index.html';
+                    const urlParams = new URLSearchParams(window.location.search);
+                    const redirectUrl = urlParams.get('redirect') || 'index.html';
+                    window.location.href = redirectUrl;
                 }, 1000);
             } else {
                 setTimeout(() => {
