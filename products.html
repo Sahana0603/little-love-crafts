@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -67,4 +68,75 @@
 <script src="script.js"></script>
 
 </body>
+=======
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Products - Little Love Crafts</title>
+<link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+
+<header>
+    <div class="logo">
+        <img src="images/logo.jpeg">
+        <h2>Little Love Crafts</h2>
+    </div>
+
+    <nav>
+        <a href="index.html">Home</a>
+        <a href="products.html" class="active">Products</a>
+        <a href="reviews.html">Reviews</a>
+        <a href="about.html">About</a>
+        <a href="contact.html">Contact</a>
+    </nav>
+</header>
+
+<section id="products">
+    <h2>Our Products</h2>
+
+    <div class="product-container">
+
+        <div class="product" onclick="openGallery('clock')">
+            <img src="images/clock/p2.jpeg">
+            <h3>Customized Clocks</h3>
+        </div>
+
+        <div class="product" onclick="openGallery('frames')">
+            <img src="images/frames/p3.jpeg">
+            <h3>Photo Frames</h3>
+        </div>
+
+        <div class="product" onclick="openGallery('hamper')">
+            <img src="images/hamper/p5.jpeg">
+            <h3>Gift Hampers</h3>
+        </div>
+
+        <div class="product" onclick="openGallery('flower')">
+            <img src="images/flower/p13.jpeg">
+            <h3>Flower Crafts</h3>
+        </div>
+
+        <div class="product" onclick="openGallery('decor')">
+            <img src="images/decor/p11.jpeg">
+            <h3>Decor Items</h3>
+        </div>
+
+    </div>
+</section>
+
+<!-- GALLERY -->
+<div id="gallery" class="gallery">
+    <span class="close" onclick="closeGallery()">✖</span>
+    <button class="back-btn" onclick="closeGallery()">⬅ Back</button>
+    <div id="galleryImages"></div>
+</div>
+
+<script src="script.js"></script>
+
+</body>
+>>>>>>> a526ac91399eb59db9dc9301d71c6c1f53f4aa56
 </html>
