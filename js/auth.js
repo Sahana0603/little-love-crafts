@@ -63,7 +63,8 @@ async function signInUser(phone, password) {
         // If logging in from an admin page or with the admin query parameter
         const urlParams = new URLSearchParams(window.location.search);
         const isAdminQuery = urlParams.get('admin') === 'true';
-        const isAdminPath = window.location.pathname.includes('/admin/');
+        const path = window.location.pathname;
+        const isAdminPath = path.includes('/admin/') || path.endsWith('/admin') || path.includes('/admin/index.html');
         
         if (isAdminQuery || isAdminPath) {
             // Secure mock owner credentials check
@@ -186,7 +187,8 @@ async function getCurrentUserProfile() {
  */
 async function checkAdminAccess() {
     const profile = await getCurrentUserProfile();
-    const isAdminPath = window.location.pathname.includes('/admin/');
+    const path = window.location.pathname;
+    const isAdminPath = path.includes('/admin/') || path.endsWith('/admin') || path.includes('/admin/index.html');
     const basePath = isAdminPath ? '' : 'admin/';
 
     if (isSupabaseReady()) {

@@ -31,7 +31,8 @@ function injectHeader() {
     if (!headerEl) return;
 
     // Check if we are inside the admin subfolder
-    const isAdminPath = window.location.pathname.includes('/admin/');
+    const path = window.location.pathname;
+    const isAdminPath = path.includes('/admin/') || path.endsWith('/admin') || path.includes('/admin/index.html');
     const basePath = isAdminPath ? '../' : '';
 
     headerEl.className = ''; // Reset class
@@ -104,7 +105,8 @@ function injectFooter() {
     const footerEl = document.querySelector('footer');
     if (!footerEl) return;
 
-    const isAdminPath = window.location.pathname.includes('/admin/');
+    const path = window.location.pathname;
+    const isAdminPath = path.includes('/admin/') || path.endsWith('/admin') || path.includes('/admin/index.html');
     const basePath = isAdminPath ? '../' : '';
 
     footerEl.className = ''; // Reset class
@@ -211,7 +213,8 @@ function updateCartCountIndicator() {
  * Toggles session-dependent login/logout buttons in nav and updates dashboard link
  */
 async function updateNavSessionState() {
-    const isAdminPath = window.location.pathname.includes('/admin/');
+    const path = window.location.pathname;
+    const isAdminPath = path.includes('/admin/') || path.endsWith('/admin') || path.includes('/admin/index.html');
     if (isAdminPath) return; // Skip updating storefront session labels on admin pages
     
     const profile = await getCurrentUserProfile();
@@ -360,7 +363,8 @@ async function enforcePageAuthentication() {
     const profile = await getCurrentUserProfile();
     
     // Handle admin directory pages
-    if (path.includes('/admin/')) {
+    const isAdminPath = path.includes('/admin/') || path.endsWith('/admin') || path.includes('/admin/index.html');
+    if (isAdminPath) {
         if (path.includes('login.html')) {
             // Admin visiting /admin/login.html -> redirect to /admin/index.html
             if (profile && profile.role === 'admin') {
@@ -410,7 +414,8 @@ async function enforcePageAuthentication() {
     if (isProtected) {
         if (!profile) {
             // Redirect to customer login.html
-            const basePath = path.includes('/admin/') ? '../' : '';
+            const isAdminPath = path.includes('/admin/') || path.endsWith('/admin') || path.includes('/admin/index.html');
+            const basePath = isAdminPath ? '../' : '';
             window.location.href = `${basePath}login.html`;
         }
     }
