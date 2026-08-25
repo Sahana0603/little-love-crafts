@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Product Details - Craftifyy</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+    <!-- NAV BAR INJECTED HERE BY JS -->
+    <header></header>
+
+    <!-- BACK NAV -->
+    <div style="padding: 20px 0 0;">
+        <div class="container">
+            <a href="shop.html" style="font-size:14px; font-weight:600; color:var(--text-muted); display:inline-flex; align-items:center; gap:6px;">
+                ⬅ Back to Shop
+            </a>
+        </div>
+    </div>
+
+    <!-- DETAILS WRAPPER -->
+    <section class="details-section">
+        <div class="container">
+            <div class="details-grid" id="product-details-container">
+                <!-- Loaded dynamically by JS -->
+                <div style="grid-column: 1/-1; text-align:center; padding:80px 0;">
+                    <p>Loading product details...</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- FOOTER INJECTED HERE BY JS -->
+    <footer></footer>
+
+    <!-- SUPABASE CLIENT & JS CONFIGS -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="js/supabase-config.js"></script>
+    <script src="js/auth.js"></script>
+    <script src="js/cart.js"></script>
+    <script src="js/main.js"></script>
+    
+    <script>
+        let currentProduct = null;
+
+        document.addEventListener('DOMContentLoaded', async () => {
+            const urlParams = new URLSearchParams(window.location.search);
+            const productId = urlParams.get('id');
+            
+            if (!productId) {
+                renderError("Product ID is missing.");
+                return;
+            }
+
+            await fetchProductDetails(productId);
+        });
+
+        async function fetchProductDetails(id) {
+            if (isSupabaseReady()) {
+                try {
+                    const { data, error } = await supabaseClient
+                        .from('products')
+                        .select('*')
+                        .eq('id', id)
+                        .maybeSingle();
+                    
+                    if (!error && data) {
+                        currentProduct = data;
+                    } else {
+                        // Attempt fallback lookup in mock products
+                        currentProduct = getMockProducts().find(p => p.id === id);
+                    }
+                } catch (e) {
+                    currentProduct = getMockProducts().find(p => p.id === id);
+                }
+            } else {
+                currentProduct = getMockProducts().find(p => p.id === id);
+            }
+
+            if (!currentProduct) {
+                renderError("Product not found or has been removed.");
+                return;
+            }
+
+            renderProductDetails();
+        }
+
+        function renderError(msg) {
+            const container = document.getElementById('product-details-container');
+            container.innerHTML = `
+                <div style="grid-column:1/-1; text-align:center; padding:80px 20px;">
+                    <h2 style="font-family:var(--font-headings); font-size:26px; margin-bottom:12px;">Oops!</h2>
+                    <p style="color:var(--text-muted); margin-bottom:24px;">${msg}</p>
+                    <a href="shop.html" class="btn btn-primary">Back to Shop</a>
+                </div>
+            `;
+        }
+
+        function renderProductDetails() {
+            const container = document.getElementById('product-details-container');
+            if (!container) return;
+
+            const p = currentProduct;
+            const priceText = p.is_starts_from ? `Starts from ₹${p.price}` : `₹${p.price}`;
+            const originalText = p.original_price ? `<span class="original-price" style="font-size:18px; margin-left:10px;">₹${p.original_price}</span>` : '';
+            
+            const stockStatusHtml = p.available 
+                ? `<span class="stock-status in-stock"><span class="status-indicator"></span>In Stock & Available</span>`
+                : `<span class="stock-status out-of-stock"><span class="status-indicator"></span>Currently Unavailable</span>`;
+
+            // Setup Customization Form if product is customizable
+            let customizationFormHtml = '';
+            if (p.customizable) {
+                customizationFormHtml = `
+                    <div class="customization-section">
+                        <h3>Customize Your Order (Optional)</h3>
+                        
+                        <div class="form-group">
+                            <label for="custom-color">Preferred Color / Theme</label>
+                            <input type="text" id="custom-color" placeholder="e.g. Pink & Cream, Pastel Lilac, Gold flakes">
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="custom-size">Preferred Size or Occasion</label>
+                            <input type="text" id="custom-size" placeholder="e.g. Size A5, 12-inch, Anniversary, Birthday">
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="custom-message">Special Message / Name Tags</label>
+                            <textarea id="custom-message" placeholder="Write any text, names, or messages you want included on the gift..." style="height:90px; resize:none;"></textarea>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="custom-reference">Reference Link / Pinterest URL</label>
+                            <input type="text" id="custom-reference" placeholder="e.g. Paste Pinterest link, reference picture URL, or instruction note">
+                        </div>
+                    </div>
+                `;
+            }
+
+            container.innerHTML = `
+                <div class="product-gallery">
+                    <img src="${p.image_url}" alt="${p.name}" onerror="this.src='images/logo.jpeg'">
+                </div>
+                
+                <div class="product-info-wrap">
+                    <span class="category-tag">${p.category}</span>
+                    <h1>${p.name}</h1>
+                    
+                    <div class="product-price">
+                        ${priceText} ${originalText}
+                    </div>
+                    
+                    ${stockStatusHtml}
+                    
+                    <p class="product-desc">${p.description || 'No description available.'}</p>
+                    
+                    ${customizationFormHtml}
+                    
+                    <div class="form-group" style="margin-bottom: 24px; max-width: 120px;">
+                        <label for="quantity-select">Quantity</label>
+                        <select id="quantity-select">
+                            <option value="1">1</option>
+                            <option value="2">2</option>
+                            <option value="3">3</option>
+                            <option value="4">4</option>
+                            <option value="5">5</option>
+                        </select>
+                    </div>
+
+                    <div class="details-actions">
+                        ${p.available 
+                            ? `<button onclick="handleAddToCart()" class="btn btn-primary">Add to Cart</button>`
+                            : `<button class="btn btn-secondary" style="cursor:not-allowed;" disabled>Out of Stock</button>`
+                        }
+                        <button onclick="handleQuickInquiry()" class="btn btn-secondary">Inquire on WhatsApp 💬</button>
+                    </div>
+                </div>
+            `;
+        }
+
+        function handleAddToCart() {
+            if (!currentProduct) return;
+            
+            const qty = Number(document.getElementById('quantity-select').value);
+            const customizations = {};
+
+            if (currentProduct.customizable) {
+                customizations.color = document.getElementById('custom-color').value.trim();
+                customizations.sizeOccasion = document.getElementById('custom-size').value.trim();
+                customizations.message = document.getElementById('custom-message').value.trim();
+                customizations.referenceUrl = document.getElementById('custom-reference').value.trim();
+            }
+
+            addToCart(currentProduct, qty, customizations);
+            alert(`"${currentProduct.name}" added to cart!`);
+        }
+
+        function handleQuickInquiry() {
+            if (!currentProduct) return;
+
+            let text = `Hi Craftifyy! 💕 I'm interested in the product *${currentProduct.name}* (Price: ₹${currentProduct.price}).\n`;
+            
+            if (currentProduct.customizable) {
+                const color = document.getElementById('custom-color')?.value.trim();
+                const size = document.getElementById('custom-size')?.value.trim();
+                const message = document.getElementById('custom-message')?.value.trim();
+                const reference = document.getElementById('custom-reference')?.value.trim();
+                
+                if (color || size || message || reference) {
+                    text += `My customization preferences are:\n`;
+                    if (color) text += `- Color: ${color}\n`;
+                    if (size) text += `- Size/Occasion: ${size}\n`;
+                    if (message) text += `- Message: "${message}"\n`;
+                    if (reference) text += `- Reference info: ${reference}\n`;
+                }
+            }
+
+            text += `Could you please let me know if it is available for booking? Thanks!`;
+            
+            const whatsappNum = "917892510154";
+            const url = `https://wa.me/${whatsappNum}?text=${encodeURIComponent(text)}`;
+            window.open(url, "_blank");
+        }
+    </script>
+</body>
+</html>

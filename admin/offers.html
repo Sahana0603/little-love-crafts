@@ -1,0 +1,489 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Manage Offers - Craftifyy</title>
+    <link rel="stylesheet" href="../style.css">
+</head>
+<body>
+
+    <!-- NAV BAR INJECTED HERE BY JS -->
+    <header></header>
+
+    <!-- ADMIN LAYOUT -->
+    <div class="admin-layout">
+        
+        <!-- SIDEBAR -->
+        <aside class="admin-sidebar">
+            <h3 style="font-size: 14px; text-transform: uppercase; color: var(--text-muted); font-weight: 700; margin-bottom: 15px; letter-spacing: 0.5px;">Navigation</h3>
+            <a href="index.html" class="admin-nav-item">Dashboard Home</a>
+            <a href="products.html" class="admin-nav-item">Manage Products</a>
+            <a href="offers.html" class="admin-nav-item active">Manage Offers</a>
+            <a href="product-form.html" class="admin-nav-item">➕ Add Product</a>
+            <a href="../index.html" class="admin-nav-item" style="margin-top:auto; border-top:1px solid var(--border-color); padding-top:20px;">View Customer Site ➡</a>
+            <a href="#" class="admin-nav-item" onclick="signOutUser(); return false;" style="color:#c62828;">Log Out 🚪</a>
+        </aside>
+
+        <!-- DASHBOARD BODY -->
+        <main class="admin-content" style="overflow-x: auto;">
+            <div class="admin-page-header">
+                <div>
+                    <h1 style="font-family:var(--font-headings); font-size:28px; font-weight:700;">Promotional Offers</h1>
+                    <p style="color:var(--text-muted); font-size:14px;">Create and manage campaigns to show on the customer website.</p>
+                </div>
+                <button onclick="openOfferForm()" class="btn btn-primary" id="add-offer-btn">+ Add Offer</button>
+            </div>
+
+            <!-- OFFER FORM (Toggled inline) -->
+            <div class="product-form-card" id="offer-form-wrap" style="display:none; margin-bottom: 30px; max-width: 100%;">
+                <h3 id="form-title" style="font-size:20px; font-family:var(--font-headings); margin-bottom:20px; font-weight:700;">Add New Promotional Offer</h3>
+                <form id="offer-form" onsubmit="handleOfferSubmit(event)">
+                    
+                    <div class="form-group">
+                        <label for="offer-title">Offer Title</label>
+                        <input type="text" id="offer-title" placeholder="e.g. 20% OFF on Birthday Hampers" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="offer-desc">Offer Description</label>
+                        <textarea id="offer-desc" placeholder="Provide offer criteria, terms, or promo code description..." style="height:80px; resize:none;" required></textarea>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="offer-type">Discount Type</label>
+                            <select id="offer-type" required onchange="handleTypeChange()">
+                                <option value="percentage">Percentage Discount (%)</option>
+                                <option value="fixed">Fixed Amount Discount (₹)</option>
+                                <option value="message">Custom Promotional Message</option>
+                            </select>
+                        </div>
+                        
+                        <div class="form-group" id="value-group">
+                            <label for="offer-value">Discount Value</label>
+                            <input type="number" id="offer-value" placeholder="e.g. 20" required min="0">
+                        </div>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="offer-start">Start Date</label>
+                            <input type="date" id="offer-start" required>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="offer-end">End Date</label>
+                            <input type="date" id="offer-end" required>
+                        </div>
+                    </div>
+
+                    <div class="form-group" style="margin-bottom: 24px;">
+                        <label for="offer-banner-file">Offer Banner / Image</label>
+                        <input type="file" id="offer-banner-file" accept="image/*" onchange="previewBannerImage(event)">
+                        
+                        <div class="image-upload-preview" id="banner-preview-box">
+                            <span id="preview-placeholder" style="color:var(--text-muted); font-size:13px;">No banner selected</span>
+                            <img id="preview-image" src="" alt="Selected Preview" style="display: none;">
+                        </div>
+                    </div>
+
+                    <div class="form-group-checkbox" style="margin-bottom: 24px;">
+                        <input type="checkbox" id="offer-active" checked>
+                        <label for="offer-active">Activate Offer Immediately</label>
+                    </div>
+
+                    <div style="display:flex; gap:16px;">
+                        <button type="submit" class="btn btn-primary" id="form-submit-btn">Save Offer Campaign</button>
+                        <button type="button" class="btn btn-secondary" onclick="closeOfferForm()">Cancel</button>
+                    </div>
+                </form>
+            </div>
+
+            <!-- OFFERS TABLE -->
+            <div class="admin-table-container">
+                <table class="admin-table">
+                    <thead>
+                        <tr>
+                            <th>Campaign Banner & Title</th>
+                            <th>Campaign Type & Value</th>
+                            <th>Duration Range</th>
+                            <th>Status</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="offers-table-body">
+                        <!-- Loaded dynamically by JS -->
+                        <tr>
+                            <td colspan="5" style="text-align: center; padding: 40px 0;">Loading offers data...</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+            
+        </main>
+    </div>
+
+    <!-- SUPABASE CLIENT & JS CONFIGS -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="../js/supabase-config.js"></script>
+    <script src="../js/auth.js"></script>
+    <script src="../js/cart.js"></script>
+    <script src="../js/main.js"></script>
+    
+    <script>
+        let offers = [];
+        let editingOfferId = null;
+        let existingBannerUrl = null;
+
+        document.addEventListener('DOMContentLoaded', async () => {
+            // Guard admin page
+            await checkAdminAccess();
+            await fetchOffers();
+        });
+
+        async function fetchOffers() {
+            if (isSupabaseReady()) {
+                try {
+                    const { data, error } = await supabaseClient
+                        .from('offers')
+                        .select('*')
+                        .order('created_at', { ascending: false });
+                    
+                    if (!error && data) {
+                        offers = data;
+                    } else {
+                        offers = getMockOffers();
+                    }
+                } catch (e) {
+                    offers = getMockOffers();
+                }
+            } else {
+                offers = getMockOffers();
+            }
+
+            renderOffersTable();
+        }
+
+        function renderOffersTable() {
+            const tbody = document.getElementById('offers-table-body');
+            if (!tbody) return;
+
+            if (offers.length === 0) {
+                tbody.innerHTML = `
+                    <tr>
+                        <td colspan="5" style="text-align: center; padding: 40px 0; font-weight:600; color:var(--text-muted);">
+                            No offers found. Click "+ Add Offer" to create a campaign.
+                        </td>
+                    </tr>
+                `;
+                return;
+            }
+
+            tbody.innerHTML = '';
+
+            offers.forEach(o => {
+                const statusHtml = o.active 
+                    ? `<span class="admin-badge badge-success">ACTIVE</span>` 
+                    : `<span class="admin-badge badge-danger">INACTIVE</span>`;
+
+                const toggleBtnLabel = o.active ? 'Deactivate' : 'Activate';
+                
+                let typeLabel = '';
+                if (o.discount_type === 'percentage') {
+                    typeLabel = `Percentage: ${o.discount_value}% OFF`;
+                } else if (o.discount_type === 'fixed') {
+                    typeLabel = `Fixed: ₹${o.discount_value} OFF`;
+                } else {
+                    typeLabel = `Promo Announcement`;
+                }
+
+                const bannerImg = o.image_url ? o.image_url : '../images/logo.jpeg';
+
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td>
+                        <div class="admin-product-row-info">
+                            <img src="${bannerImg}" alt="${o.title}" class="admin-product-thumbnail" onerror="this.src='../images/logo.jpeg'">
+                            <div>
+                                <strong style="font-size:15px; display:block;">${o.title}</strong>
+                                <span style="font-size:12px; color:var(--text-muted); max-width:280px; display:block; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${o.description}</span>
+                            </div>
+                        </div>
+                    </td>
+                    <td><span style="font-size:14px; font-weight:600;">${typeLabel}</span></td>
+                    <td>
+                        <div style="font-size:13px;">
+                            <div><strong>Start:</strong> ${o.start_date}</div>
+                            <div><strong>End:</strong> ${o.end_date}</div>
+                        </div>
+                    </td>
+                    <td>
+                        ${statusHtml}
+                        <button class="admin-action-btn" style="display:block; font-size:11px; color:#5a4e4e; text-decoration:underline; margin-top:4px;" onclick="toggleOfferStatus('${o.id}', ${o.active})">
+                            ${toggleBtnLabel}
+                        </button>
+                    </td>
+                    <td>
+                        <div class="admin-actions-cell">
+                            <button onclick="editOffer('${o.id}')" class="admin-action-btn edit-btn">Edit ✏️</button>
+                            <button onclick="deleteOffer('${o.id}', '${escapeQuote(o.title)}')" class="admin-action-btn delete-btn">Delete 🗑️</button>
+                        </div>
+                    </td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        function openOfferForm() {
+            editingOfferId = null;
+            existingBannerUrl = null;
+            
+            document.getElementById('offer-form').reset();
+            document.getElementById('form-title').textContent = "Add New Promotional Offer";
+            document.getElementById('offer-form-wrap').style.display = 'block';
+            
+            // Clear image previews
+            document.getElementById('preview-image').style.display = 'none';
+            document.getElementById('preview-placeholder').style.display = 'block';
+
+            document.getElementById('add-offer-btn').style.display = 'none';
+            
+            // Set default dates
+            const today = new Date().toISOString().split('T')[0];
+            document.getElementById('offer-start').value = today;
+            
+            const nextMonth = new Date();
+            nextMonth.setMonth(nextMonth.getMonth() + 1);
+            document.getElementById('offer-end').value = nextMonth.toISOString().split('T')[0];
+            
+            handleTypeChange();
+        }
+
+        function closeOfferForm() {
+            document.getElementById('offer-form-wrap').style.display = 'none';
+            document.getElementById('add-offer-btn').style.display = 'inline-block';
+        }
+
+        function handleTypeChange() {
+            const type = document.getElementById('offer-type').value;
+            const valInput = document.getElementById('offer-value');
+            const valGroup = document.getElementById('value-group');
+            
+            if (type === 'message') {
+                valInput.value = 0;
+                valGroup.style.opacity = '0.5';
+                valInput.disabled = true;
+            } else {
+                valGroup.style.opacity = '1';
+                valInput.disabled = false;
+            }
+        }
+
+        function previewBannerImage(event) {
+            const file = event.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    const previewImg = document.getElementById('preview-image');
+                    const placeholder = document.getElementById('preview-placeholder');
+                    placeholder.style.display = 'none';
+                    previewImg.src = e.target.result;
+                    previewImg.style.display = 'block';
+                };
+                reader.readAsDataURL(file);
+            }
+        }
+
+        function editOffer(id) {
+            const o = offers.find(item => item.id === id);
+            if (!o) return;
+
+            editingOfferId = id;
+            document.getElementById('offer-title').value = o.title;
+            document.getElementById('offer-desc').value = o.description;
+            document.getElementById('offer-type').value = o.discount_type;
+            document.getElementById('offer-value').value = o.discount_value;
+            document.getElementById('offer-start').value = o.start_date;
+            document.getElementById('offer-end').value = o.end_date;
+            document.getElementById('offer-active').checked = o.active;
+            
+            existingBannerUrl = o.image_url;
+            
+            if (existingBannerUrl) {
+                const previewImg = document.getElementById('preview-image');
+                const placeholder = document.getElementById('preview-placeholder');
+                placeholder.style.display = 'none';
+                previewImg.src = existingBannerUrl;
+                previewImg.style.display = 'block';
+            } else {
+                document.getElementById('preview-image').style.display = 'none';
+                document.getElementById('preview-placeholder').style.display = 'block';
+            }
+
+            document.getElementById('form-title').textContent = "Edit Offer Campaign Details";
+            document.getElementById('offer-form-wrap').style.display = 'block';
+            document.getElementById('add-offer-btn').style.display = 'none';
+            
+            handleTypeChange();
+            
+            // Scroll to form
+            document.getElementById('offer-form-wrap').scrollIntoView({ behavior: 'smooth' });
+        }
+
+        async function handleOfferSubmit(e) {
+            e.preventDefault();
+
+            const title = document.getElementById('offer-title').value.trim();
+            const description = document.getElementById('offer-desc').value.trim();
+            const discount_type = document.getElementById('offer-type').value;
+            const discount_value = Number(document.getElementById('offer-value').value);
+            const start_date = document.getElementById('offer-start').value;
+            const end_date = document.getElementById('offer-end').value;
+            const active = document.getElementById('offer-active').checked;
+            const fileInput = document.getElementById('offer-banner-file');
+            
+            let imageUrl = existingBannerUrl;
+            const submitBtn = document.getElementById('form-submit-btn');
+            submitBtn.disabled = true;
+            submitBtn.textContent = 'Saving campaign...';
+
+            try {
+                // Upload Image
+                if (fileInput.files.length > 0) {
+                    if (isSupabaseReady()) {
+                        const file = fileInput.files[0];
+                        const fileExt = file.name.split('.').pop();
+                        const fileName = `offer_${Math.random().toString(36).substring(2, 15)}_${Date.now()}.${fileExt}`;
+                        const filePath = `${fileName}`;
+
+                        const { data: uploadData, error: uploadError } = await supabaseClient.storage
+                            .from('product-images') // reuse product-images bucket
+                            .upload(filePath, file);
+
+                        if (uploadError) throw uploadError;
+
+                        const { data: { publicUrl } } = supabaseClient.storage
+                            .from('product-images')
+                            .getPublicUrl(filePath);
+
+                        imageUrl = publicUrl;
+                    } else {
+                        imageUrl = ''; // mock offline fallback uses default
+                    }
+                }
+
+                const payload = {
+                    title,
+                    description,
+                    discount_type,
+                    discount_value,
+                    start_date,
+                    end_date,
+                    active,
+                    image_url: imageUrl,
+                    created_at: new Date().toISOString()
+                };
+
+                if (isSupabaseReady()) {
+                    if (editingOfferId) {
+                        const { error } = await supabaseClient
+                            .from('offers')
+                            .update(payload)
+                            .eq('id', editingOfferId);
+                        if (error) throw error;
+                    } else {
+                        const { error } = await supabaseClient
+                            .from('offers')
+                            .insert(payload);
+                        if (error) throw error;
+                    }
+                } else {
+                    // Local mockup save
+                    const mockOffers = getMockOffers();
+                    if (editingOfferId) {
+                        const idx = mockOffers.findIndex(item => item.id === editingOfferId);
+                        if (idx > -1) {
+                            mockOffers[idx] = { ...mockOffers[idx], ...payload, id: editingOfferId };
+                        }
+                    } else {
+                        mockOffers.push({
+                            ...payload,
+                            id: `mock-off-${Date.now()}`
+                        });
+                    }
+                    saveMockOffers(mockOffers);
+                }
+
+                alert("Offer campaign saved successfully.");
+                closeOfferForm();
+                await fetchOffers();
+
+            } catch (err) {
+                alert(`Error saving offer campaign: ${err.message}`);
+            } finally {
+                submitBtn.disabled = false;
+                submitBtn.textContent = 'Save Offer Campaign';
+            }
+        }
+
+        async function toggleOfferStatus(id, currentStatus) {
+            const newStatus = !currentStatus;
+
+            if (isSupabaseReady()) {
+                try {
+                    const { error } = await supabaseClient
+                        .from('offers')
+                        .update({ active: newStatus })
+                        .eq('id', id);
+                    if (error) throw error;
+                } catch(e) {
+                    alert(`Error toggling campaign status: ${e.message}`);
+                    return;
+                }
+            } else {
+                const mockOffers = getMockOffers();
+                const idx = mockOffers.findIndex(item => item.id === id);
+                if (idx > -1) {
+                    mockOffers[idx].active = newStatus;
+                    saveMockOffers(mockOffers);
+                }
+            }
+
+            await fetchOffers();
+        }
+
+        async function deleteOffer(id, name) {
+            if (!confirm(`Are you sure you want to delete the offer "${name}"?`)) {
+                return;
+            }
+
+            if (isSupabaseReady()) {
+                try {
+                    const { error } = await supabaseClient
+                        .from('offers')
+                        .delete()
+                        .eq('id', id);
+                    if (error) throw error;
+                } catch (e) {
+                    alert(`Error deleting campaign: ${e.message}`);
+                    return;
+                }
+            } else {
+                const mockOffers = getMockOffers();
+                const idx = mockOffers.findIndex(item => item.id === id);
+                if (idx > -1) {
+                    mockOffers.splice(idx, 1);
+                    saveMockOffers(mockOffers);
+                }
+            }
+
+            await fetchOffers();
+        }
+
+        function escapeQuote(str) {
+            return str.replace(/'/g, "\\'");
+        }
+    </script>
+</body>
+</html>

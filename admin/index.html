@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Owner Dashboard - Craftifyy</title>
+    <link rel="stylesheet" href="../style.css">
+</head>
+<body>
+
+    <!-- NAV BAR INJECTED HERE BY JS -->
+    <header></header>
+
+    <!-- ADMIN LAYOUT -->
+    <div class="admin-layout">
+        
+        <!-- SIDEBAR -->
+        <aside class="admin-sidebar">
+            <h3 style="font-size: 14px; text-transform: uppercase; color: var(--text-muted); font-weight: 700; margin-bottom: 15px; letter-spacing: 0.5px;">Navigation</h3>
+            <a href="index.html" class="admin-nav-item active">Dashboard Home</a>
+            <a href="products.html" class="admin-nav-item">Manage Products</a>
+            <a href="offers.html" class="admin-nav-item">Manage Offers</a>
+            <a href="product-form.html" class="admin-nav-item">➕ Add Product</a>
+            <a href="../index.html" class="admin-nav-item" style="margin-top:auto; border-top:1px solid var(--border-color); padding-top:20px;">View Customer Site ➡</a>
+            <a href="#" class="admin-nav-item" onclick="signOutUser(); return false;" style="color:#c62828;">Log Out 🚪</a>
+        </aside>
+
+        <!-- DASHBOARD BODY -->
+        <main class="admin-content">
+            <div class="admin-page-header">
+                <div>
+                    <h1 style="font-family:var(--font-headings); font-size:28px; font-weight:700;">Owner Dashboard 🛠️</h1>
+                    <p style="color:var(--text-muted); font-size:14px;">Store administration panel for Craftifyy.</p>
+                </div>
+            </div>
+
+            <div class="admin-dashboard-grid" id="admin-stats-container">
+                <!-- Loaded dynamically by JS -->
+                <div style="background-color: var(--bg-primary); border:1px solid var(--border-color); border-radius: var(--radius-lg); padding:30px; text-align:center;">
+                    <p>Loading inventory metrics...</p>
+                </div>
+            </div>
+
+            <!-- QUICK ACTIONS -->
+            <section style="background-color: var(--bg-primary); border:1.5px dashed var(--accent-pink); border-radius:var(--radius-lg); padding:30px; margin-top:20px;">
+                <h3 style="font-size:20px; font-family:var(--font-headings); margin-bottom:12px; font-weight:700;">Dashboard Quick Actions</h3>
+                <p style="color:var(--text-muted); font-size:14px; margin-bottom:20px;">Common tasks to manage products and promotional offers.</p>
+                <div style="display:flex; flex-wrap:wrap; gap:16px;">
+                    <a href="product-form.html" class="btn btn-primary">+ Add Product</a>
+                    <a href="products.html" class="btn btn-secondary">Manage Products</a>
+                    <a href="offers.html" class="btn btn-secondary">Manage Offers</a>
+                    <a href="../index.html" class="btn btn-outline" target="_blank">View Customer Website</a>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <!-- SUPABASE CLIENT & JS CONFIGS -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="../js/supabase-config.js"></script>
+    <script src="../js/auth.js"></script>
+    <script src="../js/cart.js"></script>
+    <script src="../js/main.js"></script>
+    
+    <script>
+        document.addEventListener('DOMContentLoaded', async () => {
+            // Guard admin page
+            await checkAdminAccess();
+            await loadDashboardStats();
+        });
+
+        async function loadDashboardStats() {
+            const container = document.getElementById('admin-stats-container');
+            if (!container) return;
+
+            let productsList = [];
+            let offersList = [];
+
+            if (isSupabaseReady()) {
+                try {
+                    // Fetch products
+                    const { data: pData, error: pError } = await supabaseClient
+                        .from('products')
+                        .select('*');
+                    
+                    if (!pError && pData) {
+                        productsList = pData;
+                    } else {
+                        productsList = getMockProducts();
+                    }
+
+                    // Fetch offers
+                    const { data: oData, error: oError } = await supabaseClient
+                        .from('offers')
+                        .select('*');
+
+                    if (!oError && oData) {
+                        offersList = oData;
+                    } else {
+                        offersList = getMockOffers();
+                    }
+                } catch (e) {
+                    productsList = getMockProducts();
+                    offersList = getMockOffers();
+                }
+            } else {
+                productsList = getMockProducts();
+                offersList = getMockOffers();
+            }
+
+            const totalProducts = productsList.length;
+            const availableProducts = productsList.filter(p => p.available).length;
+            const outOfStock = productsList.filter(p => !p.available).length;
+            const activeOffers = offersList.filter(o => o.active).length;
+
+            container.innerHTML = `
+                <div class="admin-stat-card">
+                    <h4>Total Products</h4>
+                    <div class="value">${totalProducts}</div>
+                </div>
+                
+                <div class="admin-stat-card">
+                    <h4>Available Products</h4>
+                    <div class="value" style="color: #2e7d32;">${availableProducts}</div>
+                </div>
+                
+                <div class="admin-stat-card">
+                    <h4>Out of Stock</h4>
+                    <div class="value" style="color: ${outOfStock > 0 ? '#c62828' : 'var(--text-main)'};">${outOfStock}</div>
+                </div>
+
+                <div class="admin-stat-card">
+                    <h4>Active Offers</h4>
+                    <div class="value" style="color: var(--accent-rose);">${activeOffers}</div>
+                </div>
+            `;
+        }
+    </script>
+</body>
+</html>

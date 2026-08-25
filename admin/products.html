@@ -1,0 +1,236 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Manage Products - Craftifyy</title>
+    <link rel="stylesheet" href="../style.css">
+</head>
+<body>
+
+    <!-- NAV BAR INJECTED HERE BY JS -->
+    <header></header>
+
+    <!-- ADMIN LAYOUT -->
+    <div class="admin-layout">
+        
+        <!-- SIDEBAR -->
+        <aside class="admin-sidebar">
+            <h3 style="font-size: 14px; text-transform: uppercase; color: var(--text-muted); font-weight: 700; margin-bottom: 15px; letter-spacing: 0.5px;">Navigation</h3>
+            <a href="index.html" class="admin-nav-item">Dashboard Home</a>
+            <a href="products.html" class="admin-nav-item active">Manage Products</a>
+            <a href="product-form.html" class="admin-nav-item">Add New Product</a>
+            <a href="../shop.html" class="admin-nav-item" style="margin-top:auto; border-top:1px solid var(--border-color); padding-top:20px;">Go to Storefront ➡</a>
+        </aside>
+
+        <!-- DASHBOARD BODY -->
+        <main class="admin-content" style="overflow-x: auto;">
+            <div class="admin-page-header">
+                <div>
+                    <h1 style="font-family:var(--font-headings); font-size:28px; font-weight:700;">Manage Inventory</h1>
+                    <p style="color:var(--text-muted); font-size:14px;">Add, edit, delete, or toggle availability of products on the storefront.</p>
+                </div>
+                <a href="product-form.html" class="btn btn-primary">Add Product ➕</a>
+            </div>
+
+            <!-- INVENTORY LIST -->
+            <div class="admin-table-container">
+                <table class="admin-table">
+                    <thead>
+                        <tr>
+                            <th>Product Info</th>
+                            <th>Category</th>
+                            <th>Base Price</th>
+                            <th>Availability</th>
+                            <th>Badges</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="inventory-table-body">
+                        <!-- Loaded dynamically by JS -->
+                        <tr>
+                            <td colspan="6" style="text-align: center; padding: 40px 0;">Loading product inventory...</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+            
+        </main>
+    </div>
+
+    <!-- SUPABASE CLIENT & JS CONFIGS -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="../js/supabase-config.js"></script>
+    <script src="../js/auth.js"></script>
+    <script src="../js/cart.js"></script>
+    <script src="../js/main.js"></script>
+    
+    <script>
+        let products = [];
+
+        document.addEventListener('DOMContentLoaded', async () => {
+            // Guard admin page
+            await checkAdminAccess();
+            await fetchInventory();
+        });
+
+        async function fetchInventory() {
+            if (isSupabaseReady()) {
+                try {
+                    const { data, error } = await supabaseClient
+                        .from('products')
+                        .select('*')
+                        .order('created_at', { ascending: false });
+                    
+                    if (!error && data) {
+                        products = data;
+                    } else {
+                        products = getMockProducts();
+                    }
+                } catch (e) {
+                    products = getMockProducts();
+                }
+            } else {
+                products = getMockProducts();
+            }
+
+            renderInventoryTable();
+        }
+
+        function renderInventoryTable() {
+            const tbody = document.getElementById('inventory-table-body');
+            if (!tbody) return;
+
+            if (products.length === 0) {
+                tbody.innerHTML = `
+                    <tr>
+                        <td colspan="6" style="text-align: center; padding: 40px 0; font-weight:600; color:var(--text-muted);">
+                            No products found. Click "Add Product" to create one.
+                        </td>
+                    </tr>
+                `;
+                return;
+            }
+
+            tbody.innerHTML = '';
+
+            products.forEach(p => {
+                const badgeHtml = `
+                    ${p.featured ? '<span class="admin-badge badge-success" style="margin-right:4px; background-color:#e1f5fe; color:#0288d1;">FEATURED</span>' : ''}
+                    ${p.customizable ? '<span class="admin-badge badge-success" style="margin-right:4px; background-color:#efebe9; color:#5d4037;">CUSTOM</span>' : ''}
+                    ${p.is_starts_from ? '<span class="admin-badge badge-success" style="background-color:#fff8e1; color:#f57f17;">STARTS FROM</span>' : ''}
+                `;
+
+                const availabilityHtml = p.available 
+                    ? `<span class="admin-badge badge-success">IN STOCK</span>` 
+                    : `<span class="admin-badge badge-danger">OUT OF STOCK</span>`;
+
+                const toggleBtnLabel = p.available ? 'Mark Out of Stock' : 'Mark In Stock';
+                const originalPriceText = p.original_price ? `<span style="font-size:12px; text-decoration:line-through; color:var(--text-muted); margin-left:4px;">(₹${p.original_price})</span>` : '';
+
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td>
+                        <div class="admin-product-row-info">
+                            <img src="${p.image_url}" alt="${p.name}" class="admin-product-thumbnail" onerror="this.src='../images/logo.jpeg'">
+                            <div>
+                                <strong style="font-size:15px; display:block;">${p.name}</strong>
+                                <span style="font-size:12px; color:var(--text-muted); max-width: 250px; display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${p.description || ''}</span>
+                            </div>
+                        </div>
+                    </td>
+                    <td><span style="font-size:14px; font-weight:500;">${p.category}</span></td>
+                    <td>
+                        <strong style="font-size:15px;">₹${p.price}</strong>
+                        ${originalPriceText}
+                    </td>
+                    <td>
+                        ${availabilityHtml}
+                        <button class="admin-action-btn" style="display:block; font-size:11px; color:#5a4e4e; text-decoration:underline; margin-top:4px;" onclick="toggleAvailability('${p.id}', ${p.available})">
+                            ${toggleBtnLabel}
+                        </button>
+                    </td>
+                    <td>${badgeHtml || '<span style="color:var(--text-muted); font-size:12px;">None</span>'}</td>
+                    <td>
+                        <div class="admin-actions-cell">
+                            <a href="product-form.html?id=${p.id}" class="admin-action-btn edit-btn">Edit ✏️</a>
+                            <button onclick="deleteProduct('${p.id}', '${escapeQuote(p.name)}')" class="admin-action-btn delete-btn">Delete 🗑️</button>
+                        </div>
+                    </td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        async function toggleAvailability(id, currentStatus) {
+            const newStatus = !currentStatus;
+
+            if (isSupabaseReady()) {
+                try {
+                    const { error } = await supabaseClient
+                        .from('products')
+                        .update({ available: newStatus, updated_at: new Date().toISOString() })
+                        .eq('id', id);
+
+                    if (error) {
+                        alert(`Error: ${error.message}`);
+                        return;
+                    }
+                } catch (e) {
+                    alert(`Database operation failed: ${e.message}`);
+                    return;
+                }
+            } else {
+                // Mock update
+                const mockProducts = getMockProducts();
+                const index = mockProducts.findIndex(p => p.id === id);
+                if (index > -1) {
+                    mockProducts[index].available = newStatus;
+                    saveMockProducts(mockProducts);
+                }
+            }
+
+            // Refresh table
+            await fetchInventory();
+        }
+
+        async function deleteProduct(id, name) {
+            if (!confirm(`Are you sure you want to delete the product "${name}"? This action cannot be undone.`)) {
+                return;
+            }
+
+            if (isSupabaseReady()) {
+                try {
+                    const { error } = await supabaseClient
+                        .from('products')
+                        .delete()
+                        .eq('id', id);
+
+                    if (error) {
+                        alert(`Error deleting product: ${error.message}`);
+                        return;
+                    }
+                } catch (e) {
+                    alert(`Operation failed: ${e.message}`);
+                    return;
+                }
+            } else {
+                // Mock delete
+                const mockProducts = getMockProducts();
+                const index = mockProducts.findIndex(p => p.id === id);
+                if (index > -1) {
+                    mockProducts.splice(index, 1);
+                    saveMockProducts(mockProducts);
+                }
+            }
+
+            alert("Product deleted successfully.");
+            await fetchInventory();
+        }
+
+        function escapeQuote(str) {
+            return str.replace(/'/g, "\\'");
+        }
+    </script>
+</body>
+</html>

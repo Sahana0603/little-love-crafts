@@ -1,0 +1,336 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Edit Product - Craftifyy</title>
+    <link rel="stylesheet" href="../style.css">
+</head>
+<body>
+
+    <!-- NAV BAR INJECTED HERE BY JS -->
+    <header></header>
+
+    <!-- ADMIN LAYOUT -->
+    <div class="admin-layout">
+        
+        <!-- SIDEBAR -->
+        <aside class="admin-sidebar">
+            <h3 style="font-size: 14px; text-transform: uppercase; color: var(--text-muted); font-weight: 700; margin-bottom: 15px; letter-spacing: 0.5px;">Navigation</h3>
+            <a href="index.html" class="admin-nav-item">Dashboard Home</a>
+            <a href="products.html" class="admin-nav-item">Manage Products</a>
+            <a href="product-form.html" class="admin-nav-item active" id="sidebar-add-link">Add New Product</a>
+            <a href="../shop.html" class="admin-nav-item" style="margin-top:auto; border-top:1px solid var(--border-color); padding-top:20px;">Go to Storefront ➡</a>
+        </aside>
+
+        <!-- DASHBOARD BODY -->
+        <main class="admin-content">
+            <div class="admin-page-header">
+                <div>
+                    <h1 id="form-page-title" style="font-family:var(--font-headings); font-size:28px; font-weight:700;">Add New Product</h1>
+                    <p style="color:var(--text-muted); font-size:14px;">Fill in the details below to add or update a craft product in the catalog.</p>
+                </div>
+            </div>
+
+            <!-- PRODUCT FORM -->
+            <div class="product-form-card">
+                <form id="product-form" onsubmit="handleFormSubmit(event)">
+                    
+                    <div class="form-group">
+                        <label for="product-name">Product Name</label>
+                        <input type="text" id="product-name" placeholder="e.g. Premium Rose Crochet Bouquet" required>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="product-category">Category</label>
+                            <select id="product-category" required>
+                                <option value="" disabled selected>Select Category</option>
+                                <option value="Hampers">Hampers</option>
+                                <option value="Bouquets">Bouquets</option>
+                                <option value="Resin Arts">Resin Arts</option>
+                                <option value="Photo Frames">Photo Frames</option>
+                                <option value="Photo Bouquets">Photo Bouquets</option>
+                                <option value="Clocks">Clocks</option>
+                                <option value="Decor">Decor</option>
+                            </select>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="product-price">Price (₹)</label>
+                            <input type="number" id="product-price" placeholder="e.g. 799" required min="0">
+                        </div>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="product-original-price">Original Price (₹) - Optional</label>
+                            <input type="number" id="product-original-price" placeholder="e.g. 1299" min="0">
+                        </div>
+                        
+                        <div class="form-group" style="display:flex; flex-direction:column; justify-content:center;">
+                            <div class="form-group-checkbox" style="margin:0;">
+                                <input type="checkbox" id="product-starts-from">
+                                <label for="product-starts-from" style="margin:0; font-weight:500;">Display as "Starts from ₹..."</label>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="product-desc">Product Description</label>
+                        <textarea id="product-desc" placeholder="Write description, inclusions, size availability, etc..." style="height:120px; resize:none;" required></textarea>
+                    </div>
+
+                    <div class="form-row" style="margin-bottom:15px;">
+                        <div class="form-group-checkbox">
+                            <input type="checkbox" id="product-available" checked>
+                            <label for="product-available">Available in Stock</label>
+                        </div>
+                        
+                        <div class="form-group-checkbox">
+                            <input type="checkbox" id="product-featured">
+                            <label for="product-featured">Featured Product</label>
+                        </div>
+                        
+                        <div class="form-group-checkbox">
+                            <input type="checkbox" id="product-customizable" checked>
+                            <label for="product-customizable">Customization Available</label>
+                        </div>
+                    </div>
+
+                    <div class="form-group" style="margin-bottom: 30px;">
+                        <label for="product-image-file">Product Image</label>
+                        <input type="file" id="product-image-file" accept="image/*" onchange="previewSelectedImage(event)">
+                        
+                        <div class="image-upload-preview" id="image-preview-box">
+                            <span id="preview-placeholder" style="color:var(--text-muted); font-size:13px;">No image selected</span>
+                            <img id="preview-image" src="" alt="Selected Preview" style="display: none;">
+                        </div>
+                    </div>
+
+                    <div style="display:flex; gap:16px;">
+                        <button type="submit" class="btn btn-primary" id="form-submit-btn" style="flex-grow:1;">Save Product Details</button>
+                        <a href="products.html" class="btn btn-secondary">Cancel</a>
+                    </div>
+                </form>
+                
+                <div id="form-error-msg" style="color:#c62828; font-weight:600; text-align:center; margin-top:20px; display:none;"></div>
+                <div id="form-success-msg" style="color:#2e7d32; font-weight:600; text-align:center; margin-top:20px; display:none;"></div>
+            </div>
+
+        </main>
+    </div>
+
+    <!-- SUPABASE CLIENT & JS CONFIGS -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="../js/supabase-config.js"></script>
+    <script src="../js/auth.js"></script>
+    <script src="../js/cart.js"></script>
+    <script src="../js/main.js"></script>
+    
+    <script>
+        let editingProductId = null;
+        let existingImageUrl = null;
+
+        document.addEventListener('DOMContentLoaded', async () => {
+            // Guard admin page
+            await checkAdminAccess();
+            
+            const urlParams = new URLSearchParams(window.location.search);
+            editingProductId = urlParams.get('id');
+
+            if (editingProductId) {
+                setToEditMode();
+                await populateProductData(editingProductId);
+            }
+        });
+
+        function setToEditMode() {
+            document.getElementById('form-page-title').textContent = "Edit Product Details";
+            document.getElementById('sidebar-add-link').classList.remove('active');
+            document.title = "Edit Product - Craftifyy";
+        }
+
+        async function populateProductData(id) {
+            let product = null;
+
+            if (isSupabaseReady()) {
+                try {
+                    const { data, error } = await supabaseClient
+                        .from('products')
+                        .select('*')
+                        .eq('id', id)
+                        .maybeSingle();
+
+                    if (!error && data) {
+                        product = data;
+                    } else {
+                        product = getMockProducts().find(p => p.id === id);
+                    }
+                } catch(e) {
+                    product = getMockProducts().find(p => p.id === id);
+                }
+            } else {
+                product = getMockProducts().find(p => p.id === id);
+            }
+
+            if (!product) {
+                alert("Product details could not be found.");
+                window.location.href = 'products.html';
+                return;
+            }
+
+            // Fill inputs
+            document.getElementById('product-name').value = product.name;
+            document.getElementById('product-category').value = product.category;
+            document.getElementById('product-price').value = product.price;
+            document.getElementById('product-original-price').value = product.original_price || '';
+            document.getElementById('product-starts-from').checked = product.is_starts_from;
+            document.getElementById('product-desc').value = product.description || '';
+            document.getElementById('product-available').checked = product.available;
+            document.getElementById('product-featured').checked = product.featured;
+            document.getElementById('product-customizable').checked = product.customizable;
+
+            existingImageUrl = product.image_url;
+            if (existingImageUrl) {
+                showPreviewImage(existingImageUrl);
+            }
+        }
+
+        function previewSelectedImage(event) {
+            const file = event.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    showPreviewImage(e.target.result);
+                };
+                reader.readAsDataURL(file);
+            }
+        }
+
+        function showPreviewImage(src) {
+            const previewImg = document.getElementById('preview-image');
+            const placeholder = document.getElementById('preview-placeholder');
+            placeholder.style.display = 'none';
+            previewImg.src = src;
+            previewImg.style.display = 'block';
+        }
+
+        async function handleFormSubmit(event) {
+            event.preventDefault();
+            
+            const submitBtn = document.getElementById('form-submit-btn');
+            const errorDiv = document.getElementById('form-error-msg');
+            const successDiv = document.getElementById('form-success-msg');
+            
+            errorDiv.style.display = 'none';
+            successDiv.style.display = 'none';
+            submitBtn.disabled = true;
+            submitBtn.textContent = 'Saving changes...';
+
+            const name = document.getElementById('product-name').value.trim();
+            const category = document.getElementById('product-category').value;
+            const price = Number(document.getElementById('product-price').value);
+            const originalPriceVal = document.getElementById('product-original-price').value;
+            const originalPrice = originalPriceVal ? Number(originalPriceVal) : null;
+            const isStartsFrom = document.getElementById('product-starts-from').checked;
+            const description = document.getElementById('product-desc').value.trim();
+            const available = document.getElementById('product-available').checked;
+            const featured = document.getElementById('product-featured').checked;
+            const customizable = document.getElementById('product-customizable').checked;
+            
+            const fileInput = document.getElementById('product-image-file');
+            let imageUrl = existingImageUrl;
+
+            try {
+                // 1. Handle File Upload if new file selected
+                if (fileInput.files.length > 0) {
+                    if (isSupabaseReady()) {
+                        const file = fileInput.files[0];
+                        const fileExt = file.name.split('.').pop();
+                        const fileName = `${Math.random().toString(36).substring(2, 15)}_${Date.now()}.${fileExt}`;
+                        const filePath = `${fileName}`;
+
+                        const { data: uploadData, error: uploadError } = await supabaseClient.storage
+                            .from('product-images')
+                            .upload(filePath, file);
+
+                        if (uploadError) {
+                            throw new Error(`Upload Error: ${uploadError.message}`);
+                        }
+
+                        const { data: { publicUrl } } = supabaseClient.storage
+                            .from('product-images')
+                            .getPublicUrl(filePath);
+
+                        imageUrl = publicUrl;
+                    } else {
+                        // Mock upload path
+                        imageUrl = `images/logo.jpeg`;
+                    }
+                }
+
+                // 2. Perform DB operations
+                const productPayload = {
+                    name,
+                    category,
+                    price,
+                    original_price: originalPrice,
+                    is_starts_from: isStartsFrom,
+                    description,
+                    available,
+                    featured,
+                    customizable,
+                    image_url: imageUrl,
+                    updated_at: new Date().toISOString()
+                };
+
+                if (isSupabaseReady()) {
+                    if (editingProductId) {
+                        const { error } = await supabaseClient
+                            .from('products')
+                            .update(productPayload)
+                            .eq('id', editingProductId);
+
+                        if (error) throw error;
+                    } else {
+                        const { error } = await supabaseClient
+                            .from('products')
+                            .insert(productPayload);
+
+                        if (error) throw error;
+                    }
+                } else {
+                    // Mock operations
+                    const mockProducts = getMockProducts();
+                    if (editingProductId) {
+                        const idx = mockProducts.findIndex(p => p.id === editingProductId);
+                        if (idx > -1) {
+                            mockProducts[idx] = { ...mockProducts[idx], ...productPayload, id: editingProductId };
+                        }
+                    } else {
+                        mockProducts.push({
+                            id: `mock-new-${Date.now()}`,
+                            ...productPayload,
+                            created_at: new Date().toISOString()
+                        });
+                    }
+                    saveMockProducts(mockProducts);
+                }
+
+                successDiv.textContent = "Product saved successfully! Redirecting...";
+                successDiv.style.display = 'block';
+                setTimeout(() => {
+                    window.location.href = 'products.html';
+                }, 1000);
+
+            } catch (err) {
+                errorDiv.textContent = `Operation failed: ${err.message}`;
+                errorDiv.style.display = 'block';
+                submitBtn.disabled = false;
+                submitBtn.textContent = 'Save Product Details';
+            }
+        }
+    </script>
+</body>
+</html>

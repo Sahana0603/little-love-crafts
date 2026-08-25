@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Account Access - Craftifyy</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+    <!-- NAV BAR INJECTED HERE BY JS -->
+    <header></header>
+
+    <!-- AUTH CONTEXT -->
+    <section class="auth-section">
+        <div class="auth-container">
+            
+            <div class="auth-tabs" id="auth-tabs-header">
+                <button class="auth-tab active" id="tab-login" onclick="switchAuthTab('login')">Login</button>
+                <button class="auth-tab" id="tab-register" onclick="switchAuthTab('register')">Register</button>
+            </div>
+            
+            <h2 id="auth-title" style="font-family:var(--font-headings); font-size:24px; text-align:center; margin-bottom:20px; font-weight:700;">Customer Login</h2>
+            <p id="auth-subtitle" style="text-align:center; color:var(--text-muted); font-size:14px; margin-bottom:30px;">Access your account with your mobile number</p>
+
+            <!-- LOGIN FORM -->
+            <form id="login-form" class="auth-form active" onsubmit="handleLogin(event)">
+                <div class="form-group">
+                    <label for="login-phone">Mobile Number</label>
+                    <input type="tel" id="login-phone" placeholder="Enter your mobile number" required pattern="[0-9]{10}">
+                </div>
+                
+                <div class="form-group" style="margin-bottom:24px;">
+                    <label for="login-password">Password</label>
+                    <input type="password" id="login-password" placeholder="Enter password" required>
+                </div>
+                
+                <button type="submit" class="btn btn-primary" id="login-submit-btn">Sign In</button>
+            </form>
+
+            <!-- REGISTER FORM -->
+            <form id="register-form" class="auth-form" onsubmit="handleRegister(event)">
+                <div class="form-group">
+                    <label for="register-name">Full Name</label>
+                    <input type="text" id="register-name" placeholder="Your Name" required>
+                </div>
+                
+                <div class="form-group">
+                    <label for="register-phone">Mobile Number</label>
+                    <input type="tel" id="register-phone" placeholder="Enter your mobile number" required pattern="[0-9]{10}">
+                </div>
+                
+                <div class="form-group" style="margin-bottom:24px;">
+                    <label for="register-password">Password (Min 6 chars)</label>
+                    <input type="password" id="register-password" placeholder="Choose a password" required minlength="6">
+                </div>
+                
+                <button type="submit" class="btn btn-primary" id="register-submit-btn">Create Account</button>
+            </form>
+            
+            <div id="auth-error-message" style="color:#c62828; text-align:center; font-size:14px; margin-top:20px; font-weight:600; display:none;"></div>
+            <div id="auth-success-message" style="color:#2e7d32; text-align:center; font-size:14px; margin-top:20px; font-weight:600; display:none;"></div>
+            
+        </div>
+    </section>
+
+    <!-- FOOTER INJECTED HERE BY JS -->
+    <footer></footer>
+
+    <!-- SUPABASE CLIENT & JS CONFIGS -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="js/supabase-config.js"></script>
+    <script src="js/auth.js"></script>
+    <script src="js/cart.js"></script>
+    <script src="js/main.js"></script>
+    
+    <script>
+        let isAdminLogin = false;
+
+        document.addEventListener('DOMContentLoaded', () => {
+            const urlParams = new URLSearchParams(window.location.search);
+            if (urlParams.get('admin') === 'true') {
+                setToAdminLogin();
+            } else if (urlParams.get('register') === 'true') {
+                switchAuthTab('register');
+            }
+        });
+
+        function setToAdminLogin() {
+            isAdminLogin = true;
+            document.getElementById('auth-tabs-header').style.display = 'none';
+            document.getElementById('auth-title').textContent = "Owner Dashboard Login";
+            document.getElementById('auth-subtitle').textContent = "Enter your administrative credentials to manage inventory";
+            
+            // Re-label register check to be clear
+            switchAuthTab('login');
+        }
+
+        function switchAuthTab(tab) {
+            if (isAdminLogin) return; // Prevent customer switching on admin link
+            
+            const tabs = document.querySelectorAll('.auth-tab');
+            const forms = document.querySelectorAll('.auth-form');
+            const errorDiv = document.getElementById('auth-error-message');
+            const successDiv = document.getElementById('auth-success-message');
+            
+            errorDiv.style.display = 'none';
+            successDiv.style.display = 'none';
+            
+            tabs.forEach(t => t.classList.remove('active'));
+            forms.forEach(f => f.classList.remove('active'));
+
+            if (tab === 'login') {
+                document.getElementById('tab-login').classList.add('active');
+                document.getElementById('login-form').classList.add('active');
+                document.getElementById('auth-title').textContent = "Customer Login";
+                document.getElementById('auth-subtitle').textContent = "Access your account with your mobile number";
+            } else {
+                document.getElementById('tab-register').classList.add('active');
+                document.getElementById('register-form').classList.add('active');
+                document.getElementById('auth-title').textContent = "Customer Register";
+                document.getElementById('auth-subtitle').textContent = "Create an account to track your orders and reviews";
+            }
+        }
+
+        async function handleLogin(e) {
+            e.preventDefault();
+            
+            const phone = document.getElementById('login-phone').value;
+            const pass = document.getElementById('login-password').value;
+            const errorDiv = document.getElementById('auth-error-message');
+            const successDiv = document.getElementById('auth-success-message');
+            const submitBtn = document.getElementById('login-submit-btn');
+
+            errorDiv.style.display = 'none';
+            successDiv.style.display = 'none';
+            submitBtn.textContent = 'Signing in...';
+            submitBtn.disabled = true;
+
+            const { user, error } = await signInUser(phone, pass);
+
+            if (error) {
+                errorDiv.textContent = error.message;
+                errorDiv.style.display = 'block';
+                submitBtn.textContent = 'Sign In';
+                submitBtn.disabled = false;
+                return;
+            }
+
+            // Clear cached profile to pull fresh role checks
+            localStorage.removeItem('llc_user_profile');
+            
+            // Check Profile to confirm role
+            const profile = await getCurrentUserProfile();
+            
+            if (isAdminLogin) {
+                if (profile && profile.role === 'admin') {
+                    successDiv.textContent = "Admin authorization successful! Redirecting...";
+                    successDiv.style.display = 'block';
+                    setTimeout(() => {
+                        window.location.href = 'admin/index.html';
+                    }, 1000);
+                } else {
+                    await signOutUser();
+                    errorDiv.textContent = "Access Denied: This account is not registered as an administrator.";
+                    errorDiv.style.display = 'block';
+                    submitBtn.textContent = 'Sign In';
+                    submitBtn.disabled = false;
+                }
+            } else {
+                successDiv.textContent = "Logged in successfully! Redirecting...";
+                successDiv.style.display = 'block';
+                setTimeout(() => {
+                    window.location.href = 'index.html';
+                }, 1000);
+            }
+        }
+
+        async function handleRegister(e) {
+            e.preventDefault();
+            
+            const name = document.getElementById('register-name').value;
+            const phone = document.getElementById('register-phone').value;
+            const pass = document.getElementById('register-password').value;
+            const errorDiv = document.getElementById('auth-error-message');
+            const successDiv = document.getElementById('auth-success-message');
+            const submitBtn = document.getElementById('register-submit-btn');
+
+            errorDiv.style.display = 'none';
+            successDiv.style.display = 'none';
+            submitBtn.textContent = 'Creating Account...';
+            submitBtn.disabled = true;
+
+            const { user, error } = await signUpCustomer(name, phone, pass);
+
+            if (error) {
+                errorDiv.textContent = error.message;
+                errorDiv.style.display = 'block';
+                submitBtn.textContent = 'Create Account';
+                submitBtn.disabled = false;
+                return;
+            }
+
+            successDiv.textContent = "Registration successful! Signing in...";
+            successDiv.style.display = 'block';
+
+            // Auto log in after registration
+            const loginResult = await signInUser(phone, pass);
+            if (!loginResult.error) {
+                localStorage.removeItem('llc_user_profile');
+                setTimeout(() => {
+                    window.location.href = 'index.html';
+                }, 1000);
+            } else {
+                setTimeout(() => {
+                    switchAuthTab('login');
+                    submitBtn.textContent = 'Create Account';
+                    submitBtn.disabled = false;
+                }, 1500);
+            }
+        }
+    </script>
+</body>
+</html>

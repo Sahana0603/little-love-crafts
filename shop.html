@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Shop - Craftifyy</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+    <!-- NAV BAR INJECTED HERE BY JS -->
+    <header></header>
+
+    <!-- SHOP TITLE -->
+    <section style="padding: 40px 0 20px;">
+        <div class="container">
+            <h1 style="font-size:32px; font-family:var(--font-headings); font-weight:700;">Our Collection</h1>
+            <p style="color:var(--text-muted); font-size:15px;">Handmade with love, customizable to your budget and preferences.</p>
+        </div>
+    </section>
+
+    <!-- SHOP FILTERS & GRID -->
+    <section style="padding: 10px 0 60px;">
+        <div class="container">
+            
+            <!-- CONTROL PANEL -->
+            <div class="shop-controls">
+                <div class="category-filters" id="filters-container">
+                    <button class="filter-btn active" data-category="All">All Items</button>
+                    <button class="filter-btn" data-category="Hampers">Hampers</button>
+                    <button class="filter-btn" data-category="Bouquets">Bouquets</button>
+                    <button class="filter-btn" data-category="Resin Arts">Resin Arts</button>
+                    <button class="filter-btn" data-category="Photo Frames">Photo Frames</button>
+                    <button class="filter-btn" data-category="Photo Bouquets">Photo Bouquets</button>
+                    <button class="filter-btn" data-category="Clocks">Clocks</button>
+                    <button class="filter-btn" data-category="Decor">Decor</button>
+                </div>
+                
+                <div class="search-box">
+                    <input type="text" id="product-search" placeholder="Search products...">
+                </div>
+            </div>
+            
+            <!-- PRODUCTS GRID -->
+            <div class="product-grid" id="shop-products-grid">
+                <!-- Loaded dynamically by JS -->
+            </div>
+            
+        </div>
+    </section>
+
+    <!-- FOOTER INJECTED HERE BY JS -->
+    <footer></footer>
+
+    <!-- SUPABASE CLIENT & JS CONFIGS -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="js/supabase-config.js"></script>
+    <script src="js/auth.js"></script>
+    <script src="js/cart.js"></script>
+    <script src="js/main.js"></script>
+    
+    <script>
+        let allProducts = [];
+        let activeCategory = 'All';
+        let searchQuery = '';
+
+        document.addEventListener('DOMContentLoaded', async () => {
+            // Check for initial category query in URL
+            const urlParams = new URLSearchParams(window.location.search);
+            const initialCategory = urlParams.get('category');
+            if (initialCategory) {
+                activeCategory = initialCategory;
+                updateFilterButtons();
+            }
+
+            await fetchProducts();
+            
+            // Setup Filter Event Listeners
+            document.querySelectorAll('.filter-btn').forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    activeCategory = e.target.getAttribute('data-category');
+                    document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+                    e.target.classList.add('active');
+                    renderProducts();
+                });
+            });
+
+            // Setup Search Event Listener
+            const searchInput = document.getElementById('product-search');
+            if (searchInput) {
+                searchInput.addEventListener('input', (e) => {
+                    searchQuery = e.target.value.toLowerCase().trim();
+                    renderProducts();
+                });
+            }
+        });
+
+        function updateFilterButtons() {
+            document.querySelectorAll('.filter-btn').forEach(btn => {
+                const cat = btn.getAttribute('data-category');
+                if (cat.toLowerCase() === activeCategory.toLowerCase()) {
+                    btn.classList.add('active');
+                } else {
+                    btn.classList.remove('active');
+                }
+            });
+        }
+
+        async function fetchProducts() {
+            if (isSupabaseReady()) {
+                try {
+                    const { data, error } = await supabaseClient
+                        .from('products')
+                        .select('*')
+                        .order('created_at', { ascending: false });
+                    
+                    if (!error && data && data.length > 0) {
+                        allProducts = data;
+                    } else {
+                        allProducts = getMockProducts();
+                    }
+                } catch (e) {
+                    allProducts = getMockProducts();
+                }
+            } else {
+                allProducts = getMockProducts();
+            }
+            renderProducts();
+        }
+
+        function renderProducts() {
+            const grid = document.getElementById('shop-products-grid');
+            if (!grid) return;
+
+            // Filter logic
+            let filtered = allProducts;
+            
+            if (activeCategory !== 'All') {
+                filtered = filtered.filter(p => p.category.toLowerCase() === activeCategory.toLowerCase());
+            }
+            
+            if (searchQuery) {
+                filtered = filtered.filter(p => 
+                    p.name.toLowerCase().includes(searchQuery) || 
+                    (p.description && p.description.toLowerCase().includes(searchQuery))
+                );
+            }
+
+            grid.innerHTML = '';
+
+            if (filtered.length === 0) {
+                grid.innerHTML = `
+                    <div style="grid-column: 1/-1; text-align: center; padding: 65px 20px;">
+                        <h3 style="font-family:var(--font-headings); font-size:22px; margin-bottom:8px;">No Products Found</h3>
+                        <p style="color:var(--text-muted);">Try selecting another category or refining your search word.</p>
+                    </div>
+                `;
+                return;
+            }
+
+            filtered.forEach(p => {
+                const priceText = p.is_starts_from ? `Starts from ₹${p.price}` : `₹${p.price}`;
+                const originalText = p.original_price ? `<span class="original-price">₹${p.original_price}</span>` : '';
+                const availabilityText = p.available 
+                    ? '' 
+                    : '<span style="background-color:#ffebee; color:#c62828; padding: 4px 8px; border-radius:4px; font-size:11px; font-weight:700; margin-bottom:8px; display:inline-block; align-self: flex-start;">OUT OF STOCK</span>';
+
+                const card = document.createElement('div');
+                card.className = 'product-card';
+                card.innerHTML = `
+                    <img src="${p.image_url}" alt="${p.name}" class="product-card-img" onerror="this.src='images/logo.jpeg'">
+                    <div class="product-card-content">
+                        <div style="display:flex; justify-content:space-between; align-items:center;">
+                            <span class="product-card-category">${p.category}</span>
+                            ${availabilityText}
+                        </div>
+                        <h3>${p.name}</h3>
+                        <p class="product-card-desc">${p.description ? p.description.substring(0, 110) + '...' : ''}</p>
+                        <div class="product-card-footer">
+                            <div class="product-price-container">
+                                ${p.is_starts_from ? '<span class="price-starts-label">Starting Price</span>' : ''}
+                                <span class="product-card-price">${priceText} ${originalText}</span>
+                            </div>
+                            <a href="product-details.html?id=${p.id}" class="product-card-action" aria-label="View details">➔</a>
+                        </div>
+                    </div>
+                `;
+                grid.appendChild(card);
+            });
+        }
+    </script>
+</body>
+</html>

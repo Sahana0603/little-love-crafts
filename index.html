@@ -1,0 +1,335 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Craftifyy - Handmade Customized Gifts</title>
+    <meta name="description" content="Beautiful customized handmade gifts, gift hampers, bouquets, resin arts, photo frames and more. pan-India delivery, handmade with love.">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+    <!-- NAV BAR INJECTED HERE BY JS -->
+    <header></header>
+
+    <!-- HERO SECTION -->
+    <section class="hero">
+        <div class="container hero-content">
+            <h1>Handmade Gifts Crafted With Love 💕</h1>
+            <p>Celebrate your special moments with unique, fully customized creations tailored to your budget, style, and occasion.</p>
+            <div class="hero-actions">
+                <a href="shop.html" class="btn btn-primary">Shop Collection</a>
+                <a href="contact.html" class="btn btn-secondary">Request Custom Gift</a>
+            </div>
+        </div>
+    </section>
+
+    <!-- SPECIAL OFFERS SECTION -->
+    <section id="offers-section" class="categories-section" style="background-color: var(--bg-secondary); padding: 50px 0; border-bottom: 1px solid var(--border-color); display: none;">
+        <div class="container">
+            <div class="section-header" style="margin-bottom: 30px;">
+                <h2>Special Promotions</h2>
+                <p>Limited-time discounts and customizable gifts special offers.</p>
+            </div>
+            <div id="promotions-list" style="display: flex; flex-wrap: wrap; gap: 20px; justify-content: center;">
+                <!-- Injected dynamically by JS -->
+            </div>
+        </div>
+    </section>
+
+    <!-- SHOP BY CATEGORY SECTION -->
+    <section class="categories-section">
+        <div class="container">
+            <div class="section-header">
+                <h2>Shop by Category</h2>
+                <p>Explore our wide selection of handcraft categories, each fully customizable to your preferences.</p>
+            </div>
+            
+            <div class="categories-grid">
+                <a href="shop.html?category=Hampers" class="category-card">
+                    <div class="icon-placeholder">🎁</div>
+                    <h3>Gift Hampers</h3>
+                    <p>Curation of treats, keys, diaries & custom props.</p>
+                </a>
+                
+                <a href="shop.html?category=Bouquets" class="category-card">
+                    <div class="icon-placeholder">💐</div>
+                    <h3>Flower Bouquets</h3>
+                    <p>Premium everlasting handmade crochet flowers.</p>
+                </a>
+                
+                <a href="shop.html?category=Resin%20Arts" class="category-card">
+                    <div class="icon-placeholder">✨</div>
+                    <h3>Resin Arts</h3>
+                    <p>Beautiful bookmarks, keychains, and display items.</p>
+                </a>
+                
+                <a href="shop.html?category=Photo%20Frames" class="category-card">
+                    <div class="icon-placeholder">🖼️</div>
+                    <h3>Photo Frames</h3>
+                    <p>Elegant custom picture displays for special dates.</p>
+                </a>
+                
+                <a href="shop.html?category=Photo%20Bouquets" class="category-card">
+                    <div class="icon-placeholder">🌸</div>
+                    <h3>Photo Bouquets</h3>
+                    <p>Charming custom floral bouquets combining photographs.</p>
+                </a>
+            </div>
+        </div>
+    </section>
+
+    <!-- FEATURED PRODUCTS SECTION -->
+    <section class="products-section">
+        <div class="container">
+            <div class="section-header">
+                <h2>Featured Creations</h2>
+                <p>Our most popular handmade customized crafts, curated specially for you.</p>
+            </div>
+            
+            <div class="product-grid" id="featured-products-grid">
+                <!-- Injected dynamically by JS -->
+            </div>
+        </div>
+    </section>
+
+    <!-- WHY CHOOSE US -->
+    <section class="why-us-section">
+        <div class="container">
+            <div class="section-header">
+                <h2>Why Choose Craftifyy?</h2>
+                <p>Every piece is carefully made to ensure your gifts tell a beautiful story.</p>
+            </div>
+            
+            <div class="why-us-grid">
+                <div class="why-us-card">
+                    <div class="icon-wrap">❤️</div>
+                    <h3>Handmade With Love</h3>
+                    <p>Each product is carefully handcrafted with attention to fine details, ensuring high-quality charm.</p>
+                </div>
+                
+                <div class="why-us-card">
+                    <div class="icon-wrap">✨</div>
+                    <h3>Fully Customized</h3>
+                    <p>Tailor your gifts according to your exact budget, color theme, size, and message requirements.</p>
+                </div>
+                
+                <div class="why-us-card">
+                    <div class="icon-wrap">💸</div>
+                    <h3>Budget Friendly</h3>
+                    <p>From small keychains to premium corporate hampers, we design gifts that fit your financial boundaries.</p>
+                </div>
+                
+                <div class="why-us-card">
+                    <div class="icon-wrap">📦</div>
+                    <h3>Pan-India Delivery</h3>
+                    <p>We pack and ship our delicate crafts with extra care, delivering smiles to any location in India.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- REVIEWS PREVIEW SECTION -->
+    <section class="products-section" style="background-color: var(--bg-primary); border-top: 1px solid var(--border-color);">
+        <div class="container">
+            <div class="section-header">
+                <h2>What Our Customers Say</h2>
+                <p>Real feedback from people who trusted us with their special gifts.</p>
+            </div>
+            
+            <div class="reviews-grid" id="featured-reviews-grid">
+                <!-- Injected dynamically by JS -->
+            </div>
+            
+            <div style="text-align: center; margin-top: 30px;">
+                <a href="reviews.html" class="btn btn-outline">Read All Reviews</a>
+            </div>
+        </div>
+    </section>
+
+    <!-- FOOTER INJECTED HERE BY JS -->
+    <footer></footer>
+
+    <!-- SUPABASE CLIENT & JS CONFIGS -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="js/supabase-config.js"></script>
+    <script src="js/auth.js"></script>
+    <script src="js/cart.js"></script>
+    <script src="js/main.js"></script>
+    
+    <script>
+        document.addEventListener('DOMContentLoaded', async () => {
+            await loadFeaturedProducts();
+            await loadFeaturedReviews();
+            await loadPromotions();
+        });
+
+        async function loadFeaturedProducts() {
+            const grid = document.getElementById('featured-products-grid');
+            if (!grid) return;
+
+            let products = [];
+
+            if (isSupabaseReady()) {
+                try {
+                    const { data, error } = await supabaseClient
+                        .from('products')
+                        .select('*')
+                        .eq('featured', true)
+                        .eq('available', true)
+                        .limit(3);
+                    
+                    if (!error && data && data.length > 0) {
+                        products = data;
+                    } else {
+                        products = getMockProducts().filter(p => p.featured);
+                    }
+                } catch (e) {
+                    products = getMockProducts().filter(p => p.featured);
+                }
+            } else {
+                products = getMockProducts().filter(p => p.featured);
+            }
+
+            grid.innerHTML = '';
+            
+            products.forEach(p => {
+                const priceText = p.is_starts_from ? `Starts from ₹${p.price}` : `₹${p.price}`;
+                const originalText = p.original_price ? `<span class="original-price">₹${p.original_price}</span>` : '';
+                
+                const card = document.createElement('div');
+                card.className = 'product-card';
+                card.innerHTML = `
+                    <img src="${p.image_url}" alt="${p.name}" class="product-card-img" onerror="this.src='images/logo.jpeg'">
+                    <div class="product-card-content">
+                        <span class="product-card-category">${p.category}</span>
+                        <h3>${p.name}</h3>
+                        <p class="product-card-desc">${p.description.substring(0, 100)}...</p>
+                        <div class="product-card-footer">
+                            <div class="product-price-container">
+                                ${p.is_starts_from ? '<span class="price-starts-label">Starting Price</span>' : ''}
+                                <span class="product-card-price">${priceText} ${originalText}</span>
+                            </div>
+                            <a href="product-details.html?id=${p.id}" class="product-card-action" aria-label="View details">➔</a>
+                        </div>
+                    </div>
+                `;
+                grid.appendChild(card);
+            });
+        }
+
+        async function loadFeaturedReviews() {
+            const grid = document.getElementById('featured-reviews-grid');
+            if (!grid) return;
+
+            let reviews = [];
+
+            if (isSupabaseReady()) {
+                try {
+                    const { data, error } = await supabaseClient
+                        .from('reviews')
+                        .select('*')
+                        .order('created_at', { ascending: false })
+                        .limit(3);
+                    
+                    if (!error && data && data.length > 0) {
+                        reviews = data;
+                    } else {
+                        reviews = MOCK_REVIEWS;
+                    }
+                } catch (e) {
+                    reviews = MOCK_REVIEWS;
+                }
+            } else {
+                reviews = MOCK_REVIEWS;
+            }
+
+            grid.innerHTML = '';
+
+            reviews.forEach(r => {
+                const stars = '★'.repeat(r.rating) + '☆'.repeat(5 - r.rating);
+                const card = document.createElement('div');
+                card.className = 'review-item-card';
+                card.innerHTML = `
+                    <div class="review-header">
+                        <span class="review-author">${r.customer_name}</span>
+                        <span class="review-stars">${stars}</span>
+                    </div>
+                    <p class="review-text">"${r.review_text}"</p>
+                `;
+                grid.appendChild(card);
+            });
+        }
+
+        async function loadPromotions() {
+            const section = document.getElementById('offers-section');
+            const list = document.getElementById('promotions-list');
+            if (!section || !list) return;
+
+            let offersList = [];
+
+            if (isSupabaseReady()) {
+                try {
+                    const { data, error } = await supabaseClient
+                        .from('offers')
+                        .select('*')
+                        .eq('active', true);
+                    
+                    if (!error && data && data.length > 0) {
+                        offersList = data;
+                    } else {
+                        offersList = getMockOffers().filter(o => o.active);
+                    }
+                } catch (e) {
+                    offersList = getMockOffers().filter(o => o.active);
+                }
+            } else {
+                offersList = getMockOffers().filter(o => o.active);
+            }
+
+            if (offersList.length === 0) {
+                section.style.display = 'none';
+                return;
+            }
+
+            section.style.display = 'block';
+            list.innerHTML = '';
+
+            offersList.forEach(o => {
+                const card = document.createElement('div');
+                card.style.backgroundColor = 'var(--bg-primary)';
+                card.style.border = '1px solid var(--border-color)';
+                card.style.borderRadius = 'var(--radius-lg)';
+                card.style.padding = '24px';
+                card.style.maxWidth = '360px';
+                card.style.width = '100%';
+                card.style.boxShadow = 'var(--shadow-subtle)';
+                card.style.display = 'flex';
+                card.style.flexDirection = 'column';
+                card.style.alignItems = 'center';
+                card.style.textAlign = 'center';
+
+                let discountBadge = '';
+                if (o.discount_type === 'percentage') {
+                    discountBadge = `<span style="background-color:#ffebee; color:#c62828; padding: 4px 10px; border-radius:12px; font-size:12px; font-weight:700; margin-bottom:12px;">${o.discount_value}% OFF</span>`;
+                } else if (o.discount_type === 'fixed') {
+                    discountBadge = `<span style="background-color:#e8f5e9; color:#2e7d32; padding: 4px 10px; border-radius:12px; font-size:12px; font-weight:700; margin-bottom:12px;">₹${o.discount_value} OFF</span>`;
+                } else {
+                    discountBadge = `<span style="background-color:#e1f5fe; color:#0288d1; padding: 4px 10px; border-radius:12px; font-size:12px; font-weight:700; margin-bottom:12px;">SPECIAL OFFER</span>`;
+                }
+
+                const bannerImg = o.image_url ? o.image_url : 'images/logo.jpeg';
+
+                card.innerHTML = `
+                    <img src="${bannerImg}" alt="${o.title}" style="width:70px; height:70px; border-radius:50%; object-fit:cover; border:1px solid var(--border-color); margin-bottom:12px;" onerror="this.src='images/logo.jpeg'">
+                    ${discountBadge}
+                    <h3 style="font-size:18px; margin-bottom:8px; font-weight:700;">${o.title}</h3>
+                    <p style="font-size:13px; color:var(--text-muted); line-height:1.4; margin-bottom:16px;">${o.description}</p>
+                    <span style="font-size:11px; color:var(--text-muted); font-weight:600;">Valid: ${o.start_date} to ${o.end_date}</span>
+                `;
+                list.appendChild(card);
+            });
+        }
+    </script>
+</body>
+</html>

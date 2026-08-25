@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Customer Reviews - Craftifyy</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+    <!-- NAV BAR INJECTED HERE BY JS -->
+    <header></header>
+
+    <!-- REVIEWS CONTENT -->
+    <section class="reviews-section">
+        <div class="container">
+            <div class="section-header">
+                <h2>Customer Reviews</h2>
+                <p>See what our lovely customers have to say about their customized handmade gifts!</p>
+            </div>
+            
+            <div class="reviews-grid" id="reviews-list-container">
+                <!-- Loaded dynamically by JS -->
+                <div style="grid-column: 1/-1; text-align: center; padding: 40px 0;">
+                    <p>Loading reviews...</p>
+                </div>
+            </div>
+            
+            <!-- REVIEW WRITER -->
+            <div class="review-form-wrap">
+                <h3>Leave a Review ✨</h3>
+                
+                <div id="review-auth-warning" style="text-align:center; padding: 15px; margin-bottom: 20px; background-color:#F5EFE6; border:1px dashed var(--border-color); border-radius:6px; font-weight:600; display:none;">
+                    Please <a href="login.html" style="color:var(--accent-rose); text-decoration:underline;">Login</a> to share your feedback.
+                </div>
+                
+                <form id="new-review-form" onsubmit="handleReviewSubmit(event)" style="display:none;">
+                    <div class="form-group">
+                        <label>Your Rating</label>
+                        <div class="rating-select" id="stars-selector">
+                            <span data-val="1" class="active" onclick="setRating(1)">★</span>
+                            <span data-val="2" class="active" onclick="setRating(2)">★</span>
+                            <span data-val="3" class="active" onclick="setRating(3)">★</span>
+                            <span data-val="4" class="active" onclick="setRating(4)">★</span>
+                            <span data-val="5" class="active" onclick="setRating(5)">★</span>
+                        </div>
+                    </div>
+                    
+                    <div class="form-group" style="margin-bottom:24px;">
+                        <label for="review-msg">Your Review Description</label>
+                        <textarea id="review-msg" placeholder="Share your experience with our handcrafted gifts..." required style="height:120px; resize:none;"></textarea>
+                    </div>
+                    
+                    <button type="submit" class="btn btn-primary" id="review-submit-btn">Submit Review</button>
+                </form>
+                
+                <div id="review-success-msg" style="color:#2e7d32; text-align:center; font-weight:600; margin-top:15px; display:none;">
+                    Thank you! Your review has been posted successfully.
+                </div>
+                <div id="review-error-msg" style="color:#c62828; text-align:center; font-weight:600; margin-top:15px; display:none;"></div>
+            </div>
+        </div>
+    </section>
+
+    <!-- FOOTER INJECTED HERE BY JS -->
+    <footer></footer>
+
+    <!-- SUPABASE CLIENT & JS CONFIGS -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="js/supabase-config.js"></script>
+    <script src="js/auth.js"></script>
+    <script src="js/cart.js"></script>
+    <script src="js/main.js"></script>
+    
+    <script>
+        let currentRating = 5;
+        let currentUserProfile = null;
+
+        document.addEventListener('DOMContentLoaded', async () => {
+            await fetchReviews();
+            await setupReviewForm();
+        });
+
+        async function fetchReviews() {
+            const container = document.getElementById('reviews-list-container');
+            if (!container) return;
+
+            let reviews = [];
+
+            if (isSupabaseReady()) {
+                try {
+                    const { data, error } = await supabaseClient
+                        .from('reviews')
+                        .select('*')
+                        .order('created_at', { ascending: false });
+                    
+                    if (!error && data && data.length > 0) {
+                        reviews = data;
+                    } else {
+                        reviews = MOCK_REVIEWS;
+                    }
+                } catch (e) {
+                    reviews = MOCK_REVIEWS;
+                }
+            } else {
+                reviews = MOCK_REVIEWS;
+            }
+
+            container.innerHTML = '';
+            
+            reviews.forEach(r => {
+                const stars = '★'.repeat(r.rating) + '☆'.repeat(5 - r.rating);
+                
+                // Format Date
+                const dateObj = new Date(r.created_at);
+                const formattedDate = dateObj.toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' });
+
+                const card = document.createElement('div');
+                card.className = 'review-item-card';
+                card.innerHTML = `
+                    <div class="review-header">
+                        <span class="review-author">${r.customer_name}</span>
+                        <span class="review-stars">${stars}</span>
+                    </div>
+                    <p class="review-text">"${r.review_text}"</p>
+                    <div class="review-date">${formattedDate}</div>
+                `;
+                container.appendChild(card);
+            });
+        }
+
+        async function setupReviewForm() {
+            currentUserProfile = await getCurrentUserProfile();
+            
+            const warning = document.getElementById('review-auth-warning');
+            const form = document.getElementById('new-review-form');
+
+            if (currentUserProfile) {
+                form.style.display = 'block';
+                warning.style.display = 'none';
+            } else {
+                form.style.display = 'none';
+                warning.style.display = 'block';
+            }
+        }
+
+        function setRating(val) {
+            currentRating = val;
+            const stars = document.querySelectorAll('#stars-selector span');
+            stars.forEach(star => {
+                const starVal = Number(star.getAttribute('data-val'));
+                if (starVal <= val) {
+                    star.classList.add('active');
+                } else {
+                    star.classList.remove('active');
+                }
+            });
+        }
+
+        async function handleReviewSubmit(e) {
+            e.preventDefault();
+            
+            if (!currentUserProfile) return;
+            
+            const msg = document.getElementById('review-msg').value.trim();
+            const submitBtn = document.getElementById('review-submit-btn');
+            const successDiv = document.getElementById('review-success-msg');
+            const errorDiv = document.getElementById('review-error-msg');
+
+            successDiv.style.display = 'none';
+            errorDiv.style.display = 'none';
+            submitBtn.disabled = true;
+            submitBtn.textContent = 'Posting...';
+
+            if (isSupabaseReady()) {
+                try {
+                    const { error } = await supabaseClient
+                        .from('reviews')
+                        .insert({
+                            user_id: currentUserProfile.id,
+                            customer_name: currentUserProfile.name,
+                            rating: currentRating,
+                            review_text: msg
+                        });
+                    
+                    if (error) {
+                        errorDiv.textContent = error.message;
+                        errorDiv.style.display = 'block';
+                        submitBtn.disabled = false;
+                        submitBtn.textContent = 'Submit Review';
+                        return;
+                    }
+                } catch (err) {
+                    errorDiv.textContent = err.message;
+                    errorDiv.style.display = 'block';
+                    submitBtn.disabled = false;
+                    submitBtn.textContent = 'Submit Review';
+                    return;
+                }
+            } else {
+                // If offline fallback mode
+                MOCK_REVIEWS.unshift({
+                    id: `local-rev-${Date.now()}`,
+                    customer_name: currentUserProfile.name,
+                    rating: currentRating,
+                    review_text: msg,
+                    created_at: new Date().toISOString()
+                });
+            }
+
+            // Success
+            successDiv.style.display = 'block';
+            document.getElementById('review-msg').value = '';
+            setRating(5);
+            
+            submitBtn.disabled = false;
+            submitBtn.textContent = 'Submit Review';
+
+            // Refresh Reviews List
+            await fetchReviews();
+        }
+    </script>
+</body>
+</html>
