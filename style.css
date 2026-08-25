@@ -1371,4 +1371,135 @@ footer {
         grid-template-columns: 1fr;
         gap: 0;
     }
+
+    /* Responsive Admin Inventory Table for Mobile */
+    .admin-table-container {
+        border: none;
+        box-shadow: none;
+        background: none;
+    }
+
+    .admin-table thead {
+        display: none;
+    }
+
+    .admin-table, 
+    .admin-table tbody, 
+    .admin-table tr, 
+    .admin-table td {
+        display: block;
+        width: 100%;
+    }
+
+    .admin-table tbody tr {
+        background-color: var(--bg-primary);
+        border: 1px solid var(--border-color);
+        border-radius: var(--radius-lg);
+        padding: 16px;
+        margin-bottom: 20px;
+        box-shadow: var(--shadow-subtle);
+    }
+
+    .admin-table tbody td {
+        border-bottom: 1px dashed var(--border-color);
+        padding: 10px 12px;
+        text-align: left;
+        display: flex;
+        align-items: center;
+        flex-wrap: wrap;
+    }
+
+    .admin-table tbody tr td:last-child {
+        border-bottom: none;
+        padding-bottom: 0;
+        margin-top: 10px;
+        display: block;
+    }
+
+    .admin-table tbody td:first-child {
+        border-bottom: 1px solid var(--border-color);
+        padding-top: 0;
+        padding-bottom: 12px;
+        margin-bottom: 8px;
+        display: block;
+    }
+
+    .admin-table tbody td:nth-child(2)::before {
+        content: "Category:";
+        font-weight: 700;
+        color: var(--text-muted);
+        width: 110px;
+        display: inline-block;
+    }
+    
+    .admin-table tbody td:nth-child(3)::before {
+        content: "Price:";
+        font-weight: 700;
+        color: var(--text-muted);
+        width: 110px;
+        display: inline-block;
+    }
+
+    .admin-table tbody td:nth-child(4)::before {
+        content: "Availability:";
+        font-weight: 700;
+        color: var(--text-muted);
+        width: 110px;
+        display: inline-block;
+    }
+
+    .admin-table tbody td:nth-child(5)::before {
+        content: "Badges:";
+        font-weight: 700;
+        color: var(--text-muted);
+        width: 110px;
+        display: inline-block;
+    }
+
+    .admin-table tbody td:last-child .admin-actions-cell {
+        display: flex;
+        gap: 12px;
+        justify-content: flex-start;
+        width: 100%;
+        margin-top: 6px;
+    }
+
+    .admin-table tbody td:last-child .admin-action-btn {
+        flex: 1;
+        text-align: center;
+        padding: 12px;
+        border-radius: var(--radius-sm);
+        text-decoration: none;
+        font-size: 14px;
+        font-weight: 600;
+        cursor: pointer;
+        display: inline-block;
+        border: 1px solid var(--border-color);
+    }
+
+    .admin-table tbody td:last-child .edit-btn {
+        background-color: var(--bg-secondary);
+        color: var(--text-main);
+    }
+
+    .admin-table tbody td:last-child .delete-btn {
+        background-color: #ffebee;
+        color: #c62828;
+        border-color: #ffcdd2;
+    }
+
+    /* Responsive Admin Page Header */
+    .admin-page-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 16px;
+        margin-bottom: 24px;
+    }
+
+    .admin-page-header .btn-primary {
+        width: 100%;
+        text-align: center;
+        justify-content: center;
+        padding: 14px;
+    }
 }
